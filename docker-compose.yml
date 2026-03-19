@@ -77,7 +77,3 @@ services:
 volumes:
   pgdata:
   loki_data:
-
-networks:
-  traefik-proxy:
-    external: true  # Use the existing Traefik network
