@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: lexi-postgres
+    environment:
+      POSTGRES_USER: lexiadm
+      POSTGRES_PASSWORD: lexipwd
+      POSTGRES_DB: lexidb
+    ports:
+      - "5433:5432"   # CHANGED because 5432 is already in use
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U lexiadm -d lexidb"]
+      interval: 5s
+      retries: 10
+
+  collector:
+    build: .
+    container_name: lexi-collector
+    environment:
+      DATABASE_URL: postgresql://lexiadm:lexipwd@postgres:5432/lexidb
+    depends_on:
+      - postgres
+    ports:
+      - "8090:8080"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - collector
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres
+      - GF_DATABASE_PORT=5432   # INTERNAL port is still 5432
+      - GF_DATABASE_NAME=lexidb
+      - GF_DATABASE_USER=lexiadm
+      - GF_DATABASE_PASSWORD=lexipwd
+    ports:
+      - "3040:3000"
+    depends_on:
+      - postgres
+      - prometheus
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: grafana-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-local-config.yaml:/etc/loki/local-config.yaml:ro
+      - 'C:\dev\lexi\loki_data\index:/loki/index'
+      - 'C:\dev\lexi\loki_data\chunks:/loki/chunks'
+      - 'C:\dev\lexi\loki_data\cache:/loki/cache'
+      - 'C:\dev\lexi\loki_data\compactor:/loki/compactor'
+      - 'C:\dev\lexi\loki_data\wal:/loki/wal'
+    ports:
+    - "3100:3100"
+    restart: unless-stopped
+
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+
+
+volumes:
+  pgdata:
