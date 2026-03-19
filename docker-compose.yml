@@ -42,29 +42,9 @@ services:
 
   grafana:
     image: grafana/grafana
-    container_name: grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_DATABASE_TYPE=postgres
-      - GF_DATABASE_HOST=postgres
-      - GF_DATABASE_PORT=5432
-      - GF_DATABASE_NAME=lexidb
-      - GF_DATABASE_USER=lexiadm
-      - GF_DATABASE_PASSWORD=lexipwd
-      - GF_SERVER_ROOT_URL=https://grafana  # Important for Grafana to work behind proxy
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
-    ports:
-      - "3040:3000"  # Keep this for direct access if needed
-    labels:
-      - "traefik.enable=true"  # Enable Traefik for this container
-      - "traefik.http.routers.grafana.rule=Host(`grafana`)"  # Match your domain name
-      - "traefik.http.routers.grafana.entrypoints=websecure"  # Use HTTPS
-      - "traefik.http.routers.grafana.tls=true"  # Enable TLS
-      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"  # Use Let's Encrypt
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"  # Internal container port
-    networks:
-      - traefik-proxy  # Connect to Traefik's network
     depends_on:
       - postgres
       - prometheus
