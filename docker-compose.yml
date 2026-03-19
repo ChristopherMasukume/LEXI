@@ -65,13 +65,9 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki-local-config.yaml:/etc/loki/local-config.yaml:ro
-      - 'C:/dev/lexi/loki_data/index:/loki/index'
-      - 'C:/dev/lexi/loki_data/chunks:/loki/chunks'
-      - 'C:/dev/lexi/loki_data/cache:/loki/cache'
-      - 'C:/dev/lexi/loki_data/compactor:/loki/compactor'
-      - 'C:/dev/lexi/loki_data/wal:/loki/wal'
+      - loki_data:/loki
     ports:
-    - "3100:3100"
+      - "3100:3100"
     restart: unless-stopped
 
 
@@ -89,3 +85,4 @@ services:
 
 volumes:
   pgdata:
+  loki_data:
