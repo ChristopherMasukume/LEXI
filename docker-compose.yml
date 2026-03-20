@@ -72,6 +72,10 @@ services:
     depends_on:
       - loki
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+
 
 
 volumes:
